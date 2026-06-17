@@ -33,9 +33,9 @@ const menus = [
     href: "/laporan",
   },
   {
-    name: "Kategori Ayam",
+    name: "Master data Ayam",
     icon: Tags,
-    href: "/kategori",
+    href: "/master",
   },
   {
     name: "Management User",
