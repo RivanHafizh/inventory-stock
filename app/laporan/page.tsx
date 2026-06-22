@@ -1,11 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import {
-  Search,
-  FileSpreadsheet,
-  RotateCcw,
-} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 import Sidebar from "@/components/sidebar";
 import Header from "@/components/header";
@@ -14,43 +9,239 @@ import ReportCards from "@/components/reportCards";
 import ReportChart from "@/components/reportChart";
 import ReportTable from "@/components/reportTable";
 
-export default function LaporanPage() {
-  const [tanggalAwal, setTanggalAwal] = useState("");
-  const [tanggalAkhir, setTanggalAkhir] = useState("");
-  const [ayam, setAyam] = useState("");
+import {
+  collection,
+  onSnapshot,
+} from "firebase/firestore";
 
-  const handleFilter = () => {
-    console.log({
+import { db } from "@/lib/firebase";
+
+interface ReportItem {
+  id: string;
+  jenis: "Masuk" | "Keluar";
+  tanggal: Date;
+  namaKlien?: string;
+  ayamBesar: number;
+  ayamSedang: number;
+  ayamKecil: number;
+  total: number;
+}
+
+export default function LaporanPage() {
+  const [tanggalAwal, setTanggalAwal] =
+    useState("");
+
+  const [tanggalAkhir, setTanggalAkhir] =
+    useState("");
+
+  const [ayam, setAyam] =
+    useState("");
+
+  const [laporan, setLaporan] =
+    useState<ReportItem[]>([]);
+
+  useEffect(() => {
+    let masuk: ReportItem[] = [];
+    let keluar: ReportItem[] = [];
+
+    const updateData = () => {
+      setLaporan([
+        ...masuk,
+        ...keluar,
+      ]);
+    };
+
+    const unsubMasuk =
+      onSnapshot(
+        collection(
+          db,
+          "ayamMasuk"
+        ),
+        (snapshot) => {
+          masuk =
+            snapshot.docs.map(
+              (doc) => {
+                const data =
+                  doc.data();
+
+                return {
+                  id: doc.id,
+                  jenis: "Masuk",
+
+                  tanggal:
+                    data.createdAt?.toDate() ||
+                    new Date(),
+
+                  ayamBesar:
+                    data.ayamBesar || 0,
+
+                  ayamSedang:
+                    data.ayamSedang || 0,
+
+                  ayamKecil:
+                    data.ayamKecil || 0,
+
+                  total:
+                    data.total || 0,
+                };
+              }
+            );
+
+          updateData();
+        }
+      );
+
+    const unsubKeluar =
+      onSnapshot(
+        collection(
+          db,
+          "ayamKeluar"
+        ),
+        (snapshot) => {
+          keluar =
+            snapshot.docs.map(
+              (doc) => {
+                const data =
+                  doc.data();
+
+                return {
+                  id: doc.id,
+                  jenis:
+                    "Keluar",
+
+                  tanggal:
+                    data.createdAt?.toDate() ||
+                    new Date(),
+
+                  namaKlien:
+                    data.namaKlien ||
+                    "-",
+
+                  ayamBesar:
+                    data.ayamBesar || 0,
+
+                  ayamSedang:
+                    data.ayamSedang || 0,
+
+                  ayamKecil:
+                    data.ayamKecil || 0,
+
+                  total:
+                    data.total || 0,
+                };
+              }
+            );
+
+          updateData();
+        }
+      );
+
+    return () => {
+      unsubMasuk();
+      unsubKeluar();
+    };
+  }, []);
+
+  const filteredData =
+    useMemo(() => {
+      return laporan.filter(
+        (item) => {
+          const cocokAyam =
+            !ayam ||
+            (ayam ===
+              "ayam besar" &&
+              item.ayamBesar > 0) ||
+            (ayam ===
+              "ayam sedang" &&
+              item.ayamSedang > 0) ||
+            (ayam ===
+              "ayam kecil" &&
+              item.ayamKecil > 0);
+
+          const cocokAwal =
+            !tanggalAwal ||
+            item.tanggal >=
+              new Date(
+                tanggalAwal
+              );
+
+          const cocokAkhir =
+            !tanggalAkhir ||
+            item.tanggal <=
+              new Date(
+                tanggalAkhir +
+                  "T23:59:59"
+              );
+
+          return (
+            cocokAyam &&
+            cocokAwal &&
+            cocokAkhir
+          );
+        }
+      );
+    }, [
+      laporan,
+      ayam,
       tanggalAwal,
       tanggalAkhir,
-      ayam,
-    });
-  };
+    ]);
 
-  const handleReset = () => {
-    setTanggalAwal("");
-    setTanggalAkhir("");
-    setAyam("");
-  };
+  const totalMasuk =
+    filteredData
+      .filter(
+        (item) =>
+          item.jenis ===
+          "Masuk"
+      )
+      .reduce(
+        (
+          total,
+          item
+        ) =>
+          total +
+          item.total,
+        0
+      );
 
-  const handleExport = () => {
-    alert("Export Excel");
-  };
+  const totalKeluar =
+    filteredData
+      .filter(
+        (item) =>
+          item.jenis ===
+          "Keluar"
+      )
+      .reduce(
+        (
+          total,
+          item
+        ) =>
+          total +
+          item.total,
+        0
+      );
+
+  const totalStok =
+    totalMasuk -
+    totalKeluar;
+
+  const handleReset =
+    () => {
+      setTanggalAwal("");
+      setTanggalAkhir("");
+      setAyam("");
+    };
 
   return (
     <div className="flex min-h-screen bg-slate-100">
 
-      {/* Sidebar */}
       <Sidebar />
 
-      {/* Content */}
       <div className="flex-1">
 
         <Header />
 
         <main className="p-8">
-
-          {/* Heading */}
 
           <div className="mb-8">
 
@@ -59,144 +250,108 @@ export default function LaporanPage() {
             </h1>
 
             <p className="text-gray-500 mt-2">
-              Ringkasan transaksi ayam masuk, ayam keluar
-              serta total stok.
+              Ringkasan transaksi
+              ayam masuk dan
+              ayam keluar.
             </p>
 
           </div>
 
-          {/* Filter */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm mb-8">
 
-          <div className="bg-white rounded-3xl shadow-sm p-6 mb-8">
+            <div className="grid md:grid-cols-4 gap-4">
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5">
+              <input
+                type="date"
+                value={
+                  tanggalAwal
+                }
+                onChange={(e) =>
+                  setTanggalAwal(
+                    e.target.value
+                  )
+                }
+                className="border rounded-xl p-3"
+              />
 
-              {/* Tanggal Awal */}
+              <input
+                type="date"
+                value={
+                  tanggalAkhir
+                }
+                onChange={(e) =>
+                  setTanggalAkhir(
+                    e.target.value
+                  )
+                }
+                className="border rounded-xl p-3"
+              />
 
-              <div>
+              <select
+                value={ayam}
+                onChange={(e) =>
+                  setAyam(
+                    e.target.value
+                  )
+                }
+                className="border rounded-xl p-3"
+              >
+                <option value="">
+                  Semua Ayam
+                </option>
 
-                <label className="text-sm text-gray-600">
-                  Tanggal Awal
-                </label>
+                <option value="ayam kecil">
+                  Ayam Kecil
+                </option>
 
-                <input
-                  type="date"
-                  value={tanggalAwal}
-                  onChange={(e) =>
-                    setTanggalAwal(e.target.value)
-                  }
-                  className="mt-2 w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none"
-                />
+                <option value="ayam sedang">
+                  Ayam Sedang
+                </option>
 
-              </div>
+                <option value="ayam besar">
+                  Ayam Besar
+                </option>
+              </select>
 
-              {/* Tanggal Akhir */}
-
-              <div>
-
-                <label className="text-sm text-gray-600">
-                  Tanggal Akhir
-                </label>
-
-                <input
-                  type="date"
-                  value={tanggalAkhir}
-                  onChange={(e) =>
-                    setTanggalAkhir(e.target.value)
-                  }
-                  className="mt-2 w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none"
-                />
-
-              </div>
-
-              {/* Master Data Ayam */}
-
-              <div>
-
-                <label className="text-sm text-gray-600">
-                  Nama Ayam
-                </label>
-
-                <select
-                  value={ayam}
-                  onChange={(e) =>
-                    setAyam(e.target.value)
-                  }
-                  className="mt-2 w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none"
-                >
-                  <option value="">
-                    Semua Ayam
-                  </option>
-
-                  <option value="ayam kecil">
-                    ayam-kecil
-                  </option>
-
-                  <option value="ayam sedang">
-                    ayam-sedang
-                  </option>
-
-                  <option value="ayam besar">
-                    ayam-besar
-                  </option>
-
-                </select>
-
-              </div>
-
-              {/* Filter */}
-
-              <div className="flex items-end">
-
-                <button
-                  onClick={handleFilter}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white rounded-xl py-3 flex items-center justify-center gap-2 transition"
-                >
-                  <Search size={18} />
-                  Filter
-                </button>
-
-              </div>
-
-              {/* Reset */}
-
-              <div className="flex items-end gap-3">
-
-                <button
-                  onClick={handleReset}
-                  className="flex-1 border border-gray-300 rounded-xl py-3 flex justify-center items-center gap-2 hover:bg-gray-100 transition"
-                >
-                  <RotateCcw size={18} />
-                </button>
-
-                <button
-                  onClick={handleExport}
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-3 flex justify-center items-center gap-2 transition"
-                >
-                  <FileSpreadsheet size={18} />
-                  Excel
-                </button>
-
-              </div>
+              <button
+                onClick={
+                  handleReset
+                }
+                className="bg-gray-200 rounded-xl"
+              >
+                Reset
+              </button>
 
             </div>
 
           </div>
 
-          {/* Statistik */}
-
-          <ReportCards />
-
-          {/* Grafik */}
+          <ReportCards
+            totalMasuk={
+              totalMasuk
+            }
+            totalKeluar={
+              totalKeluar
+            }
+            totalStok={
+              totalStok
+            }
+          />
 
           <div className="mt-8">
-            <ReportChart />
+            <ReportChart
+              laporan={
+                filteredData
+              }
+            />
           </div>
 
-          {/* Table */}
-
           <div className="mt-8">
-            <ReportTable />
+            <ReportTable
+              laporan={
+                filteredData
+              }
+            />
           </div>
 
         </main>

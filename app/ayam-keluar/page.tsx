@@ -170,72 +170,126 @@ export default function AyamKeluarPage() {
     return () => unsubscribe();
   }, []);
 
-  const handleSubmit = async (
-    e: React.FormEvent
-  ) => {
-    e.preventDefault();
+const handleSubmit = async (
+  e: React.FormEvent
+) => {
+  e.preventDefault();
 
-    const besar =
-      Number(ayamBesar) || 0;
+  const besar =
+    Number(ayamBesar) || 0;
 
-    const sedang =
-      Number(ayamSedang) || 0;
+  const sedang =
+    Number(ayamSedang) || 0;
 
-    const kecil =
-      Number(ayamKecil) || 0;
+  const kecil =
+    Number(ayamKecil) || 0;
 
-    if (
-      besar > stokBesar ||
-      sedang > stokSedang ||
-      kecil > stokKecil
-    ) {
-      alert(
-        "Jumlah ayam keluar melebihi stok tersedia"
+  let availableBesar =
+    stokBesar;
+
+  let availableSedang =
+    stokSedang;
+
+  let availableKecil =
+    stokKecil;
+
+  // Jika edit, kembalikan dulu stok lama
+  if (editingId) {
+
+    const oldData =
+      data.find(
+        (item) =>
+          item.id ===
+          editingId
       );
-      return;
+
+    if (oldData) {
+
+      availableBesar +=
+        oldData.ayamBesar;
+
+      availableSedang +=
+        oldData.ayamSedang;
+
+      availableKecil +=
+        oldData.ayamKecil;
     }
+  }
 
-    const payload = {
-      namaKlien,
-      ayamBesar: besar,
-      ayamSedang: sedang,
-      ayamKecil: kecil,
-      total:
-        besar + sedang + kecil,
-    };
+  // Validasi stok
+  if (
+    besar >
+      availableBesar ||
+    sedang >
+      availableSedang ||
+    kecil >
+      availableKecil
+  ) {
+    alert(
+      "Jumlah ayam keluar melebihi stok tersedia"
+    );
 
-    try {
-      setLoading(true);
+    return;
+  }
 
-      if (editingId) {
-        await updateDoc(
-          doc(
-            db,
-            "ayamKeluar",
-            editingId
-          ),
-          payload
-        );
-      } else {
-        await addDoc(
-          collection(
-            db,
-            "ayamKeluar"
-          ),
-          {
-            ...payload,
-            createdAt:
-              serverTimestamp(),
-          }
-        );
-      }
-
-      clearForm();
-      setShowSuccess(true);
-    } finally {
-      setLoading(false);
-    }
+  const payload = {
+    namaKlien,
+    ayamBesar: besar,
+    ayamSedang: sedang,
+    ayamKecil: kecil,
+    total:
+      besar +
+      sedang +
+      kecil,
   };
+
+  try {
+
+    setLoading(true);
+
+    if (editingId) {
+
+      await updateDoc(
+        doc(
+          db,
+          "ayamKeluar",
+          editingId
+        ),
+        payload
+      );
+
+    } else {
+
+      await addDoc(
+        collection(
+          db,
+          "ayamKeluar"
+        ),
+        {
+          ...payload,
+          createdAt:
+            serverTimestamp(),
+        }
+      );
+
+    }
+
+    clearForm();
+
+    setShowSuccess(
+      true
+    );
+
+  } catch (error) {
+
+    console.log(error);
+
+  } finally {
+
+    setLoading(false);
+
+  }
+};
 
   const handleEdit = (
     item: AyamKeluar
@@ -311,37 +365,43 @@ export default function AyamKeluarPage() {
           {/* CARD STOK */}
           <div className="grid md:grid-cols-3 gap-6 mt-8">
 
-            <div className="bg-white rounded-3xl p-6 shadow-sm border">
-              <h3 className="text-gray-500">
-                Stok Ayam Besar
-              </h3>
+  <div className="bg-white rounded-3xl p-6 shadow-sm border border-green-100">
 
-              <h2 className="text-4xl font-bold text-green-600 mt-2">
-                {stokBesar}
-              </h2>
-            </div>
+    <p className="text-gray-500">
+      Stok Ayam Besar
+    </p>
 
-            <div className="bg-white rounded-3xl p-6 shadow-sm border">
-              <h3 className="text-gray-500">
-                Stok Ayam Sedang
-              </h3>
+    <h2 className="text-5xl font-bold text-green-600 mt-3">
+      {stokBesar}
+    </h2>
 
-              <h2 className="text-4xl font-bold text-green-600 mt-2">
-                {stokSedang}
-              </h2>
-            </div>
+  </div>
 
-            <div className="bg-white rounded-3xl p-6 shadow-sm border">
-              <h3 className="text-gray-500">
-                Stok Ayam Kecil
-              </h3>
+  <div className="bg-white rounded-3xl p-6 shadow-sm border border-yellow-100">
 
-              <h2 className="text-4xl font-bold text-green-600 mt-2">
-                {stokKecil}
-              </h2>
-            </div>
+    <p className="text-gray-500">
+      Stok Ayam Sedang
+    </p>
 
-          </div>
+    <h2 className="text-5xl font-bold text-yellow-500 mt-3">
+      {stokSedang}
+    </h2>
+
+  </div>
+
+  <div className="bg-white rounded-3xl p-6 shadow-sm border border-blue-100">
+
+    <p className="text-gray-500">
+      Stok Ayam Kecil
+    </p>
+
+    <h2 className="text-5xl font-bold text-blue-600 mt-3">
+      {stokKecil}
+    </h2>
+
+  </div>
+
+</div>
 
           {/* FORM */}
           <div className="bg-white rounded-3xl p-8 shadow-sm border mt-8">
@@ -429,112 +489,184 @@ export default function AyamKeluarPage() {
           </div>
 
           {/* TABLE */}
-          <div className="bg-white rounded-3xl p-8 shadow-sm border mt-8">
+         <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 mt-8">
 
-            <table className="w-full">
+  <div className="flex items-center justify-between mb-6">
 
-              <thead>
-                <tr className="border-b">
-                  <th>No</th>
-                  <th>Klien</th>
-                  <th>Besar</th>
-                  <th>Sedang</th>
-                  <th>Kecil</th>
-                  <th>Total</th>
-                  <th>Aksi</th>
-                </tr>
-              </thead>
+    <div>
 
-              <tbody>
+      <h2 className="text-2xl font-bold text-black">
+        Riwayat Ayam Keluar
+      </h2>
 
-                {data.map(
-                  (
-                    item,
-                    index
-                  ) => (
-                    <tr
-                      key={item.id}
-                      className="border-b"
-                    >
-                      <td>
-                        {index + 1}
-                      </td>
+      <p className="text-gray-500 text-sm">
+        Total Data: {data.length}
+      </p>
 
-                      <td>
-                        {
-                          item.namaKlien
-                        }
-                      </td>
+    </div>
 
-                      <td>
-                        {
-                          item.ayamBesar
-                        }
-                      </td>
+  </div>
 
-                      <td>
-                        {
-                          item.ayamSedang
-                        }
-                      </td>
+  <div className="overflow-x-auto">
 
-                      <td>
-                        {
-                          item.ayamKecil
-                        }
-                      </td>
+    <table className="w-full">
 
-                      <td>
-                        {item.total}
-                      </td>
+      <thead>
 
-                      <td>
-                        <div className="flex gap-2">
+        <tr className="border-b bg-gray-50">
 
-                          <button
-                            onClick={() =>
-                              handleDetail(
-                                item
-                              )
-                            }
-                            className="bg-green-500 text-white px-3 py-1 rounded"
-                          >
-                            Detail
-                          </button>
+          <th className="py-4 px-3 text-left text-black">
+            No
+          </th>
 
-                          <button
-                            onClick={() =>
-                              handleEdit(
-                                item
-                              )
-                            }
-                            className="bg-blue-500 text-white px-3 py-1 rounded"
-                          >
-                            Edit
-                          </button>
+          <th className="py-4 px-3 text-left text-black">
+            Nama Klien
+          </th>
 
-                          <button
-                            onClick={() =>
-                              handleDelete(
-                                item.id
-                              )
-                            }
-                            className="bg-red-500 text-white px-3 py-1 rounded"
-                          >
-                            Hapus
-                          </button>
+          <th className="py-4 px-3 text-center text-black">
+            Besar
+          </th>
 
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                )}
+          <th className="py-4 px-3 text-center text-black">
+            Sedang
+          </th>
 
-              </tbody>
+          <th className="py-4 px-3 text-center text-black">
+            Kecil
+          </th>
 
-            </table>
+          <th className="py-4 px-3 text-center text-black">
+            Total
+          </th>
 
-          </div>
+          <th className="py-4 px-3 text-center text-black">
+            Aksi
+          </th>
+
+        </tr>
+
+      </thead>
+
+      <tbody>
+
+        {data.map(
+          (
+            item,
+            index
+          ) => (
+            <tr
+              key={item.id}
+              className="
+                border-b
+                hover:bg-green-50
+                transition
+              "
+            >
+
+              <td className="py-4 px-3 text-black">
+                {index + 1}
+              </td>
+
+              <td className="py-4 px-3 font-medium text-black">
+                {item.namaKlien}
+              </td>
+
+              <td className="text-center text-black">
+                {item.ayamBesar}
+              </td>
+
+              <td className="text-center text-black">
+                {item.ayamSedang}
+              </td>
+
+              <td className="text-center text-black">
+                {item.ayamKecil}
+              </td>
+
+              <td className="text-center">
+
+                <span
+                  className="
+                    bg-green-100
+                    text-green-700
+                    px-3
+                    py-1
+                    rounded-full
+                    font-medium
+                  "
+                >
+                  {item.total}
+                </span>
+
+              </td>
+
+              <td>
+
+                <div className="flex justify-center gap-2">
+
+                  <button
+                    onClick={() =>
+                      handleDetail(item)
+                    }
+                    className="
+                      bg-green-500
+                      hover:bg-green-600
+                      text-white
+                      px-3
+                      py-2
+                      rounded-xl
+                    "
+                  >
+                    Detail
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      handleEdit(item)
+                    }
+                    className="
+                      bg-blue-500
+                      hover:bg-blue-600
+                      text-white
+                      px-3
+                      py-2
+                      rounded-xl
+                    "
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      handleDelete(item.id)
+                    }
+                    className="
+                      bg-red-500
+                      hover:bg-red-600
+                      text-white
+                      px-3
+                      py-2
+                      rounded-xl
+                    "
+                  >
+                    Hapus
+                  </button>
+
+                </div>
+
+              </td>
+
+            </tr>
+          )
+        )}
+
+      </tbody>
+
+    </table>
+
+  </div>
+
+</div>
 
         </main>
       </div>

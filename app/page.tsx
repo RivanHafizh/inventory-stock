@@ -4,17 +4,37 @@ import Image from "next/image";
 import { User, Lock } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+
+import {
+  signInWithEmailAndPassword,
+} from "firebase/auth";
+
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
+
+import {
+  auth,
+  db,
+} from "@/lib/firebase";
 
 export default function LoginPage() {
   const router = useRouter();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] =
+    useState("");
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [password, setPassword] =
+    useState("");
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
 
   const handleLogin = async (
     e: React.FormEvent<HTMLFormElement>
@@ -25,46 +45,127 @@ export default function LoginPage() {
     setError("");
 
     try {
-      await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
+
+      // ==========================
+      // LOGIN OWNER
+      // ==========================
+
+      try {
+
+        const ownerCredential =
+          await signInWithEmailAndPassword(
+            auth,
+            email,
+            password
+          );
+
+        localStorage.setItem(
+          "role",
+          "owner"
+        );
+
+        localStorage.setItem(
+          "userName",
+          "Owner"
+        );
+
+        localStorage.setItem(
+          "userEmail",
+          ownerCredential.user.email || ""
+        );
+
+        router.push("/dashboard");
+
+        return;
+
+      } catch {
+        // lanjut cek admin
+      }
+
+      // ==========================
+      // LOGIN ADMIN
+      // ==========================
+
+      const q = query(
+        collection(db, "users"),
+        where("email", "==", email),
+        where(
+          "password",
+          "==",
+          password
+        )
       );
 
-      router.push("/dashboard");
+      const snapshot =
+        await getDocs(q);
+
+      if (!snapshot.empty) {
+
+        const admin =
+          snapshot.docs[0].data();
+
+        localStorage.setItem(
+          "role",
+          "admin"
+        );
+
+        localStorage.setItem(
+          "userName",
+          admin.nama
+        );
+
+        localStorage.setItem(
+          "userEmail",
+          admin.email
+        );
+
+        router.push("/dashboard");
+
+        return;
+      }
+
+      setError(
+        "Email atau Password salah"
+      );
+
     } catch (error) {
+
       console.error(error);
 
       setError(
-        "Email atau Password yang Anda masukkan salah."
+        "Terjadi kesalahan saat login"
       );
+
     } finally {
+
       setLoading(false);
+
     }
   };
 
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-green-700 via-green-600 to-emerald-500 overflow-hidden">
 
-      {/* Blur Effect */}
+      {/* Background Blur */}
+
       <div className="absolute top-0 left-0 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
+
       <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-white/10 rounded-full blur-3xl"></div>
 
       {/* Left Side */}
+
       <div className="hidden lg:flex w-1/2 items-center justify-center relative">
 
         <div className="text-center z-10">
 
-          <div className="animate-float">
-            <Image
-              src="/ayam2.png"
-              alt="Chicken"
-              width={250}
-              height={250}
-              priority
-              className="drop-shadow-2xl mx-auto"
-            />
-          </div>
+          <Image
+            src="/ayam2.png"
+            alt="Chicken"
+            width={250}
+            height={250}
+            priority
+            className="mx-auto drop-shadow-2xl"
+          />
 
           <h1 className="text-5xl font-bold text-white mt-6">
             Simbolon Inventory
@@ -82,6 +183,7 @@ export default function LoginPage() {
               <h3 className="text-2xl font-bold text-white">
                 500+
               </h3>
+
               <p className="text-green-100 text-sm">
                 Data Ayam
               </p>
@@ -91,6 +193,7 @@ export default function LoginPage() {
               <h3 className="text-2xl font-bold text-white">
                 12
               </h3>
+
               <p className="text-green-100 text-sm">
                 Kandang
               </p>
@@ -100,6 +203,7 @@ export default function LoginPage() {
               <h3 className="text-2xl font-bold text-white">
                 24/7
               </h3>
+
               <p className="text-green-100 text-sm">
                 Monitoring
               </p>
@@ -108,12 +212,14 @@ export default function LoginPage() {
           </div>
 
         </div>
+
       </div>
 
       {/* Right Side */}
+
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 relative z-10">
 
-        <div className="w-full max-w-md backdrop-blur-xl bg-white/90 rounded-[32px] shadow-2xl p-10">
+        <div className="w-full max-w-md bg-white/90 backdrop-blur-xl rounded-[32px] shadow-2xl p-10">
 
           <div className="text-center mb-8">
 
@@ -137,6 +243,7 @@ export default function LoginPage() {
           >
 
             <div>
+
               <label className="text-sm font-medium text-gray-600">
                 Email
               </label>
@@ -150,19 +257,23 @@ export default function LoginPage() {
 
                 <input
                   type="email"
-                  placeholder="admin@simbolon.com"
+                  placeholder="Masukkan email"
                   value={email}
                   onChange={(e) =>
-                    setEmail(e.target.value)
+                    setEmail(
+                      e.target.value
+                    )
                   }
                   required
-                  className="w-full pl-11 pr-4 py-3 border border-gray-200 text-gray-700 rounded-2xl focus:ring-2 focus:ring-green-500 focus:outline-none"
+                  className="w-full pl-11 pr-4 py-3 border border-gray-200 text-black rounded-2xl focus:ring-2 focus:ring-green-500 outline-none"
                 />
 
               </div>
+
             </div>
 
             <div>
+
               <label className="text-sm font-medium text-gray-600">
                 Password
               </label>
@@ -179,13 +290,16 @@ export default function LoginPage() {
                   placeholder="Masukkan password"
                   value={password}
                   onChange={(e) =>
-                    setPassword(e.target.value)
+                    setPassword(
+                      e.target.value
+                    )
                   }
                   required
-                  className="w-full pl-11 pr-4 py-3 border border-gray-200 text-gray-700 rounded-2xl focus:ring-2 focus:ring-green-500 focus:outline-none"
+                  className="w-full pl-11 pr-4 py-3 border border-gray-200 text-black rounded-2xl focus:ring-2 focus:ring-green-500 outline-none"
                 />
 
               </div>
+
             </div>
 
             {error && (
@@ -194,26 +308,23 @@ export default function LoginPage() {
               </div>
             )}
 
-            <div className="flex justify-between text-sm">
-
-              <label className="flex items-center gap-2 text-gray-600">
-                <input type="checkbox" />
-                Remember Me
-              </label>
-
-              <button
-                type="button"
-                className="text-green-600 hover:text-green-700"
-              >
-                Lupa Password?
-              </button>
-
-            </div>
-
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 rounded-2xl bg-gradient-to-r from-green-600 to-emerald-500 text-white font-semibold shadow-lg hover:scale-[1.02] transition disabled:opacity-50"
+              className="
+                w-full
+                py-4
+                rounded-2xl
+                bg-gradient-to-r
+                from-green-600
+                to-emerald-500
+                text-white
+                font-semibold
+                shadow-lg
+                hover:scale-[1.02]
+                transition
+                disabled:opacity-50
+              "
             >
               {loading
                 ? "Loading..."

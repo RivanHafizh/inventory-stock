@@ -1,271 +1,435 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import Sidebar from "@/components/sidebar";
 import Header from "@/components/header";
-
 import StatCard from "@/components/statcard";
+
+import ReportChart, {
+  ReportItem,
+} from "@/components/reportChart";
 
 import {
   Bird,
   ArrowDownCircle,
   ArrowUpCircle,
   Tags,
+  Users,
 } from "lucide-react";
 
-export default function DashboardPage() {
-  return (
-    <div className="flex min-h-screen bg-[#F8FAFC]">
+import {
+  collection,
+  onSnapshot,
+} from "firebase/firestore";
 
-      {/* Sidebar */}
+import { db } from "@/lib/firebase";
+
+export default function DashboardPage() {
+  const [totalMasuk, setTotalMasuk] =
+    useState(0);
+
+  const [totalKeluar, setTotalKeluar] =
+    useState(0);
+
+  const [stok, setStok] =
+    useState(0);
+
+  const [kategori, setKategori] =
+    useState(0);
+
+  const [admin, setAdmin] =
+    useState(0);
+
+  const [laporan, setLaporan] =
+    useState<ReportItem[]>([]);
+
+  useEffect(() => {
+    let dataMasuk: ReportItem[] =
+      [];
+
+    let dataKeluar: ReportItem[] =
+      [];
+
+    const unsubMasuk =
+      onSnapshot(
+        collection(
+          db,
+          "ayamMasuk"
+        ),
+        (snapshot) => {
+          let total = 0;
+
+          dataMasuk =
+            snapshot.docs.map(
+              (doc) => {
+                const data =
+                  doc.data();
+
+                total +=
+                  data.total || 0;
+
+                return {
+                  id: doc.id,
+                  jenis:
+                    "Masuk",
+                  tanggal:
+                    data.createdAt?.toDate?.() ||
+                    new Date(),
+                  total:
+                    data.total || 0,
+                };
+              }
+            );
+
+          setTotalMasuk(
+            total
+          );
+
+          setLaporan([
+            ...dataMasuk,
+            ...dataKeluar,
+          ]);
+        }
+      );
+
+    const unsubKeluar =
+      onSnapshot(
+        collection(
+          db,
+          "ayamKeluar"
+        ),
+        (snapshot) => {
+          let total = 0;
+
+          dataKeluar =
+            snapshot.docs.map(
+              (doc) => {
+                const data =
+                  doc.data();
+
+                total +=
+                  data.total || 0;
+
+                return {
+                  id: doc.id,
+                  jenis:
+                    "Keluar",
+                  tanggal:
+                    data.createdAt?.toDate?.() ||
+                    new Date(),
+                  total:
+                    data.total || 0,
+                };
+              }
+            );
+
+          setTotalKeluar(
+            total
+          );
+
+          setLaporan([
+            ...dataMasuk,
+            ...dataKeluar,
+          ]);
+        }
+      );
+
+    const unsubKategori =
+      onSnapshot(
+        collection(
+          db,
+          "masterAyam"
+        ),
+        (snapshot) => {
+          setKategori(
+            snapshot.size
+          );
+        }
+      );
+
+    const unsubUsers =
+      onSnapshot(
+        collection(
+          db,
+          "users"
+        ),
+        (snapshot) => {
+          setAdmin(
+            snapshot.size
+          );
+        }
+      );
+
+    return () => {
+      unsubMasuk();
+      unsubKeluar();
+      unsubKategori();
+      unsubUsers();
+    };
+  }, []);
+
+  useEffect(() => {
+    setStok(
+      totalMasuk -
+        totalKeluar
+    );
+  }, [
+    totalMasuk,
+    totalKeluar,
+  ]);
+
+  return (
+    <div className="flex min-h-screen bg-slate-100">
+
       <Sidebar />
 
-      {/* Content */}
-      <main className="flex-1 p-8">
+      <div className="flex-1">
 
-        <Header />
+        <div className="p-6">
 
-        {/* Statistik */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mt-8">
+          <Header />
 
-          <StatCard
-            title="Total Ayam"
-            value="4,352"
-            growth="8% minggu ini"
-            icon={
-              <Bird
-                size={28}
-                className="text-green-700"
+          <main className="mt-6">
+
+            {/* Heading */}
+
+            <div className="mb-8">
+
+              <h1 className="text-3xl font-bold text-black">
+                Dashboard
+              </h1>
+
+              <p className="text-gray-500 mt-2">
+                Ringkasan aktivitas
+                inventory ayam
+              </p>
+
+            </div>
+
+            {/* Stat Card */}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6">
+
+              <StatCard
+                title="Total Stok"
+                value={stok}
+                icon={
+                  <Bird
+                    size={26}
+                  />
+                }
+                color="bg-blue-600"
               />
-            }
-          />
 
-          <StatCard
-            title="Ayam Masuk"
-            value="1,500"
-            growth="12% bulan ini"
-            icon={
-              <ArrowDownCircle
-                size={28}
-                className="text-green-700"
+              <StatCard
+                title="Ayam Masuk"
+                value={
+                  totalMasuk
+                }
+                icon={
+                  <ArrowDownCircle
+                    size={26}
+                  />
+                }
+                color="bg-green-600"
               />
-            }
-          />
 
-          <StatCard
-            title="Ayam Keluar"
-            value="1,430"
-            growth="8% bulan ini"
-            icon={
-              <ArrowUpCircle
-                size={28}
-                className="text-green-700"
+              <StatCard
+                title="Ayam Keluar"
+                value={
+                  totalKeluar
+                }
+                icon={
+                  <ArrowUpCircle
+                    size={26}
+                  />
+                }
+                color="bg-red-600"
               />
-            }
-          />
 
-          <StatCard
-            title="Kategori Ayam"
-            value="15"
-            growth="3 kategori baru"
-            icon={
-              <Tags
-                size={28}
-                className="text-green-700"
+              <StatCard
+                title="Kategori"
+                value={
+                  kategori
+                }
+                icon={
+                  <Tags
+                    size={26}
+                  />
+                }
+                color="bg-orange-500"
               />
-            }
-          />
 
-        </div>
+              <StatCard
+                title="Admin"
+                value={admin}
+                icon={
+                  <Users
+                    size={26}
+                  />
+                }
+                color="bg-purple-600"
+              />
 
-        {/* Chart + Monitor */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-8">
+            </div>
 
-          {/* Chart */}
-          <div className="xl:col-span-2 bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+            {/* Chart */}
 
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h2 className="text-xl font-bold">
-                  Grafik Ayam Masuk & Keluar
+            <div className="mt-8">
+
+              <ReportChart
+                laporan={
+                  laporan
+                }
+              />
+
+            </div>
+
+            {/* Bottom Card */}
+
+            <div className="grid lg:grid-cols-2 gap-6 mt-8">
+
+              {/* Informasi */}
+
+              <div className="bg-white rounded-3xl p-6 shadow-sm">
+
+                <h2 className="text-xl font-bold text-black mb-5">
+                  Informasi Sistem
                 </h2>
 
-                <p className="text-gray-400 text-sm">
-                  Statistik transaksi bulanan
-                </p>
+                <div className="space-y-4">
+
+                  <div className="flex justify-between">
+
+                    <span className="text-gray-500">
+                      Total Ayam
+                      Masuk
+                    </span>
+
+                    <span className="font-semibold text-black">
+                      {
+                        totalMasuk
+                      }
+                    </span>
+
+                  </div>
+
+                  <div className="flex justify-between">
+
+                    <span className="text-gray-500">
+                      Total Ayam
+                      Keluar
+                    </span>
+
+                    <span className="font-semibold text-black">
+                      {
+                        totalKeluar
+                      }
+                    </span>
+
+                  </div>
+
+                  <div className="flex justify-between">
+
+                    <span className="text-gray-500">
+                      Stok Saat Ini
+                    </span>
+
+                    <span className="font-semibold text-green-600">
+                      {stok}
+                    </span>
+
+                  </div>
+
+                  <div className="flex justify-between">
+
+                    <span className="text-gray-500">
+                      Total Kategori
+                    </span>
+
+                    <span className="font-semibold text-black">
+                      {
+                        kategori
+                      }
+                    </span>
+
+                  </div>
+
+                </div>
+
               </div>
 
-              <select className="border border-gray-200 rounded-xl px-4 py-2">
-                <option>Bulanan</option>
-                <option>Tahunan</option>
-              </select>
-            </div>
+              {/* Status */}
 
-            {/* Placeholder Chart */}
-            <div className="h-[320px] flex items-end justify-between gap-4">
+              <div className="bg-white rounded-3xl p-6 shadow-sm">
 
-              {[40, 60, 90, 50, 80, 120, 160, 230, 170, 140, 110, 180].map(
-                (height, index) => (
-                  <div
-                    key={index}
-                    className="flex-1 bg-green-500 rounded-t-xl"
-                    style={{
-                      height: `${height}px`,
-                    }}
-                  />
-                )
-              )}
+                <h2 className="text-xl font-bold text-black mb-5">
+                  Status Sistem
+                </h2>
 
-            </div>
-          </div>
+                <div className="space-y-4">
 
-          {/* Monitor */}
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                  <div className="flex justify-between">
 
-            <h2 className="text-xl font-bold">
-              Monitoring Stok
-            </h2>
+                    <span className="text-gray-500">
+                      Firebase
+                    </span>
 
-            <p className="text-gray-400 text-sm mb-8">
-              Total stok ayam tersedia
-            </p>
+                    <span className="text-green-600 font-semibold">
+                      Connected
+                    </span>
 
-            <div className="flex justify-center">
+                  </div>
 
-              <div className="relative w-52 h-52">
+                  <div className="flex justify-between">
 
-                <svg
-                  viewBox="0 0 36 36"
-                  className="w-full h-full"
-                >
-                  <path
-                    d="M18 2.0845
-                    a 15.9155 15.9155 0 0 1 0 31.831
-                    a 15.9155 15.9155 0 0 1 0 -31.831"
-                    fill="none"
-                    stroke="#E5E7EB"
-                    strokeWidth="3"
-                  />
+                    <span className="text-gray-500">
+                      Firestore
+                    </span>
 
-                  <path
-                    d="M18 2.0845
-                    a 15.9155 15.9155 0 0 1 0 31.831
-                    a 15.9155 15.9155 0 0 1 0 -31.831"
-                    fill="none"
-                    stroke="#16A34A"
-                    strokeWidth="3"
-                    strokeDasharray="80, 100"
-                  />
-                </svg>
+                    <span className="text-green-600 font-semibold">
+                      Online
+                    </span>
 
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <h2 className="text-4xl font-bold">
-                    80%
-                  </h2>
+                  </div>
 
-                  <p className="text-gray-500">
-                    Stok Tersedia
-                  </p>
+                  <div className="flex justify-between">
+
+                    <span className="text-gray-500">
+                      Monitoring
+                    </span>
+
+                    <span className="text-green-600 font-semibold">
+                      Active
+                    </span>
+
+                  </div>
+
+                  <div className="flex justify-between">
+
+                    <span className="text-gray-500">
+                      Total Admin
+                    </span>
+
+                    <span className="font-semibold text-black">
+                      {admin}
+                    </span>
+
+                  </div>
+
                 </div>
 
               </div>
 
             </div>
 
-          </div>
-        </div>
-
-        {/* Tabel Aktivitas */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mt-8">
-
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold">
-              Aktivitas Terbaru
-            </h2>
-
-            <button className="text-green-600">
-              Lihat Semua
-            </button>
-          </div>
-
-          <table className="w-full">
-
-            <thead>
-              <tr className="border-b">
-                <th className="text-left py-4">
-                  Tanggal
-                </th>
-
-                <th className="text-left py-4">
-                  Aktivitas
-                </th>
-
-                <th className="text-left py-4">
-                  Jumlah
-                </th>
-
-                <th className="text-left py-4">
-                  Status
-                </th>
-              </tr>
-            </thead>
-
-            <tbody>
-
-              <tr className="border-b">
-                <td className="py-4">
-                  18 Juni 2026
-                </td>
-
-                <td>Ayam Masuk</td>
-
-                <td>250 Ekor</td>
-
-                <td>
-                  <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full">
-                    Selesai
-                  </span>
-                </td>
-              </tr>
-
-              <tr className="border-b">
-                <td className="py-4">
-                  17 Juni 2026
-                </td>
-
-                <td>Ayam Keluar</td>
-
-                <td>180 Ekor</td>
-
-                <td>
-                  <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full">
-                    Diproses
-                  </span>
-                </td>
-              </tr>
-
-              <tr>
-                <td className="py-4">
-                  16 Juni 2026
-                </td>
-
-                <td>Tambah Kategori</td>
-
-                <td>Broiler</td>
-
-                <td>
-                  <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full">
-                    Pending
-                  </span>
-                </td>
-              </tr>
-
-            </tbody>
-
-          </table>
+          </main>
 
         </div>
 
-      </main>
+      </div>
+
     </div>
   );
 }

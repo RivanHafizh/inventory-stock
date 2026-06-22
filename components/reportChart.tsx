@@ -11,73 +11,90 @@ import {
   Legend,
 } from "recharts";
 
-const data = [
-  {
-    bulan: "Jan",
-    masuk: 420,
-    keluar: 300,
-  },
-  {
-    bulan: "Feb",
-    masuk: 520,
-    keluar: 400,
-  },
-  {
-    bulan: "Mar",
-    masuk: 610,
-    keluar: 450,
-  },
-  {
-    bulan: "Apr",
-    masuk: 700,
-    keluar: 520,
-  },
-  {
-    bulan: "Mei",
-    masuk: 830,
-    keluar: 620,
-  },
-  {
-    bulan: "Jun",
-    masuk: 920,
-    keluar: 700,
-  },
-];
+export interface ReportItem {
+  id: string;
+  jenis: "Masuk" | "Keluar";
+  tanggal: Date;
+  total: number;
+}
 
-export default function ReportChart() {
+interface ReportChartProps {
+  laporan: ReportItem[];
+}
+
+export default function ReportChart({
+  laporan,
+}: ReportChartProps) {
+
+  const monthlyData = Array.from(
+    { length: 12 },
+    (_, index) => {
+      const bulan = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "Mei",
+        "Jun",
+        "Jul",
+        "Agu",
+        "Sep",
+        "Okt",
+        "Nov",
+        "Des",
+      ][index];
+
+      const masuk = laporan
+        .filter(
+          (item) =>
+            item.jenis === "Masuk" &&
+            item.tanggal.getMonth() === index
+        )
+        .reduce(
+          (sum, item) =>
+            sum + item.total,
+          0
+        );
+
+      const keluar = laporan
+        .filter(
+          (item) =>
+            item.jenis === "Keluar" &&
+            item.tanggal.getMonth() === index
+        )
+        .reduce(
+          (sum, item) =>
+            sum + item.total,
+          0
+        );
+
+      return {
+        bulan,
+        masuk,
+        keluar,
+      };
+    }
+  );
+
   return (
     <div className="bg-white rounded-3xl shadow-sm p-6">
 
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <h2 className="text-xl font-bold text-black mb-1">
+        Grafik Transaksi Ayam
+      </h2>
 
-        <div>
-          <h2 className="text-xl font-bold text-gray-800">
-            Grafik Transaksi Ayam
-          </h2>
-
-          <p className="text-gray-500 text-sm mt-1">
-            Statistik Ayam Masuk dan Ayam Keluar
-          </p>
-        </div>
-
-      </div>
-
-      {/* Chart */}
+      <p className="text-gray-500 text-sm mb-6">
+        Statistik ayam masuk dan keluar
+      </p>
 
       <div className="h-[400px]">
 
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer
+          width="100%"
+          height="100%"
+        >
 
-          <AreaChart
-            data={data}
-            margin={{
-              top: 10,
-              right: 30,
-              left: 0,
-              bottom: 0,
-            }}
-          >
+          <AreaChart data={monthlyData}>
 
             <defs>
 
@@ -93,6 +110,7 @@ export default function ReportChart() {
                   stopColor="#16A34A"
                   stopOpacity={0.4}
                 />
+
                 <stop
                   offset="95%"
                   stopColor="#16A34A"
@@ -112,6 +130,7 @@ export default function ReportChart() {
                   stopColor="#EF4444"
                   stopOpacity={0.4}
                 />
+
                 <stop
                   offset="95%"
                   stopColor="#EF4444"
@@ -138,7 +157,6 @@ export default function ReportChart() {
               type="monotone"
               dataKey="masuk"
               stroke="#16A34A"
-              fillOpacity={1}
               fill="url(#colorMasuk)"
               strokeWidth={3}
               name="Ayam Masuk"
@@ -148,7 +166,6 @@ export default function ReportChart() {
               type="monotone"
               dataKey="keluar"
               stroke="#EF4444"
-              fillOpacity={1}
               fill="url(#colorKeluar)"
               strokeWidth={3}
               name="Ayam Keluar"
