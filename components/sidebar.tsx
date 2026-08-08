@@ -2,295 +2,255 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-
 import {
-  LayoutDashboard,
   ArrowDownCircle,
   ArrowUpCircle,
+  Bird,
   FileText,
-  Tags,
-  Users,
+  LayoutDashboard,
   LogOut,
   Menu,
+  Tags,
+  Users,
   X,
-  Bird,
 } from "lucide-react";
+import { signOut } from "firebase/auth";
+import { useEffect, useMemo, useState } from "react";
 
-import {
-  signOut,
-} from "firebase/auth";
-
-import {
-  auth,
-} from "@/lib/firebase";
-
-import {
-  useEffect,
-  useState,
-} from "react";
+import { auth } from "@/lib/firebase";
 
 interface MenuItem {
   name: string;
-  icon: any;
+  icon: React.ElementType;
   href: string;
 }
 
 export default function Sidebar() {
-  const pathname =
-    usePathname();
+  const pathname = usePathname();
+  const router = useRouter();
 
-  const router =
-    useRouter();
-
-  const [open, setOpen] =
-    useState(false);
-
-  const [role, setRole] =
-    useState("");
+  const [open, setOpen] = useState(false);
+  const [role, setRole] = useState("");
 
   useEffect(() => {
-    const userRole =
-      localStorage.getItem(
-        "role"
-      ) || "";
-
-    setRole(userRole);
+    setRole(localStorage.getItem("role") || "");
   }, []);
 
-  const menus: MenuItem[] = [
-    {
-      name: "Dashboard",
-      icon: LayoutDashboard,
-      href: "/dashboard",
-    },
-    {
-      name: "Ayam Masuk",
-      icon: ArrowDownCircle,
-      href: "/ayam-masuk",
-    },
-    {
-      name: "Ayam Keluar",
-      icon: ArrowUpCircle,
-      href: "/ayam-keluar",
-    },
-    {
-      name: "Laporan",
-      icon: FileText,
-      href: "/laporan",
-    },
-    {
-      name: "Master Ayam",
-      icon: Tags,
-      href: "/master",
-    },
-  ];
+  const menus = useMemo<MenuItem[]>(() => {
+    const baseMenus: MenuItem[] = [
+      {
+        name: "Dashboard",
+        icon: LayoutDashboard,
+        href: "/",
+      },
+      {
+        name: "Ayam Masuk",
+        icon: ArrowDownCircle,
+        href: "/ayam-masuk",
+      },
+      {
+        name: "Ayam Keluar",
+        icon: ArrowUpCircle,
+        href: "/ayam-keluar",
+      },
+      {
+        name: "Laporan",
+        icon: FileText,
+        href: "/laporan",
+      },
+      {
+        name: "Master Ayam",
+        icon: Tags,
+        href: "/masterayam",
+      },
+    ];
 
-  if (role === "owner") {
-    menus.push({
-      name: "Management User",
-      icon: Users,
-      href: "/users",
-    });
-  }
+    if (role.toLowerCase() === "owner") {
+      baseMenus.push({
+        name: "Management User",
+        icon: Users,
+        href: "/users",
+      });
+    }
 
-  const handleLogout =
-    async () => {
+    return baseMenus;
+  }, [role]);
+
+  const isActive = (href: string) => {
+    if (href === "/") {
+      return pathname === "/";
+    }
+
+    return (
+      pathname === href ||
+      pathname.startsWith(`${href}/`)
+    );
+  };
+
+  const handleNavigation = () => {
+    setOpen(false);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Gagal logout Firebase:", error);
+    } finally {
       localStorage.clear();
-
-      try {
-        await signOut(auth);
-      } catch {}
-
       router.push("/");
-    };
+    }
+  };
 
   return (
     <>
-      {/* Mobile Button */}
-
+      {/* MOBILE MENU BUTTON */}
       <button
-        onClick={() =>
-          setOpen(!open)
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-label={
+          open ? "Tutup navigasi" : "Buka navigasi"
         }
-        className="lg:hidden fixed top-4 left-4 z-50 bg-white shadow-md p-2 rounded-xl"
+        aria-expanded={open}
+        className="lg:hidden fixed top-4 left-4 z-[60] w-10 h-10 rounded-xl bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"
       >
-        {open ? (
-          <X size={20} />
-        ) : (
-          <Menu size={20} />
-        )}
+        {open ? <X size={19} /> : <Menu size={19} />}
       </button>
 
-      {/* Overlay */}
-
+      {/* MOBILE OVERLAY */}
       {open && (
-        <div
-          className="fixed inset-0 bg-black/40 z-30 lg:hidden"
-          onClick={() =>
-            setOpen(false)
-          }
+        <button
+          type="button"
+          aria-label="Tutup navigasi"
+          onClick={() => setOpen(false)}
+          className="lg:hidden fixed inset-0 z-40 bg-gray-950/35 backdrop-blur-[1px]"
         />
       )}
 
-      {/* Sidebar */}
-
+      {/* SIDEBAR */}
       <aside
         className={`
-        fixed lg:static z-40
-        h-screen
-        w-72
-        bg-white
-        border-r
-        border-gray-100
-        flex
-        flex-col
-        transition-all
-        duration-300
-
-        ${
-          open
-            ? "translate-x-0"
-            : "-translate-x-full lg:translate-x-0"
-        }
-      `}
+          fixed lg:sticky top-0 left-0 z-50
+          h-screen w-[260px] shrink-0
+          bg-white border-r border-gray-200
+          flex flex-col
+          transition-transform duration-300 ease-out
+          ${
+            open
+              ? "translate-x-0"
+              : "-translate-x-full lg:translate-x-0"
+          }
+        `}
       >
-        {/* Logo */}
-
-        <div className="p-6 border-b">
-
+        {/* BRAND */}
+        <div className="px-5 py-5 border-b border-gray-100">
           <div className="flex items-center gap-3">
-
-            <div className="w-12 h-12 rounded-2xl bg-green-600 flex items-center justify-center">
-
-              <Bird
-                size={24}
-                className="text-white"
-              />
-
+            <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center shadow-sm shadow-emerald-600/20">
+              <Bird size={20} className="text-white" />
             </div>
 
-            <div>
-
-              <h1 className="text-xl font-bold text-gray-800">
-                Poultry Stock
+            <div className="min-w-0">
+              <h1 className="text-base font-bold tracking-tight text-gray-900 truncate">
+                Simbolon Inventory
               </h1>
 
-              <p className="text-xs text-gray-500">
-                Inventory System
+              <p className="text-[11px] text-gray-400 mt-0.5">
+                Inventory Management System
               </p>
-
             </div>
-
           </div>
-
         </div>
 
-        {/* User Role */}
+        {/* USER / ROLE */}
+        <div className="px-4 py-4">
+          <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 px-3.5 py-3">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-white border border-emerald-100 flex items-center justify-center text-emerald-700">
+                <Users size={16} />
+              </div>
 
-        <div className="px-5 py-4">
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-wider font-bold text-emerald-600">
+                  Role
+                </p>
 
-          <div className="bg-green-50 rounded-2xl p-4">
-
-            <h3 className="font-semibold text-gray-800 capitalize">
-              {role || "User"}
-            </h3>
-
-            <p className="text-sm text-gray-500">
-              Sistem Inventory
-            </p>
-
+                <p className="text-sm font-bold text-gray-800 capitalize truncate mt-0.5">
+                  {role || "User"}
+                </p>
+              </div>
+            </div>
           </div>
-
         </div>
 
-        {/* Menu */}
+        {/* NAVIGATION */}
+        <nav className="flex-1 overflow-y-auto px-3 pb-4">
+          <p className="px-3 mb-2 text-[10px] uppercase tracking-widest font-bold text-gray-400">
+            Menu Utama
+          </p>
 
-        <nav className="flex-1 px-4">
-
-          <ul className="space-y-2">
-
+          <ul className="space-y-1">
             {menus.map((menu) => {
-              const Icon =
-                menu.icon;
-
-              const active =
-                pathname ===
-                menu.href;
+              const Icon = menu.icon;
+              const active = isActive(menu.href);
 
               return (
-                <li
-                  key={
-                    menu.name
-                  }
-                >
+                <li key={menu.name}>
                   <Link
-                    href={
-                      menu.href
-                    }
+                    href={menu.href}
+                    onClick={handleNavigation}
                     className={`
-                    flex
-                    items-center
-                    gap-3
-                    px-4
-                    py-3
-                    rounded-2xl
-                    transition-all
-
-                    ${
-                      active
-                        ? "bg-green-600 text-white shadow-lg"
-                        : "text-gray-600 hover:bg-green-50 hover:text-green-700"
-                    }
-                  `}
+                      group relative flex items-center gap-3
+                      min-h-10 px-3.5 py-2.5
+                      rounded-xl text-sm font-semibold
+                      transition-all duration-200
+                      ${
+                        active
+                          ? "bg-emerald-600 text-white shadow-sm shadow-emerald-600/20"
+                          : "text-gray-600 hover:bg-emerald-50 hover:text-emerald-700"
+                      }
+                    `}
                   >
+                    {active && (
+                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full bg-white/90" />
+                    )}
+
                     <Icon
-                      size={20}
+                      size={18}
+                      strokeWidth={active ? 2.3 : 2}
+                      className={
+                        active
+                          ? "text-white"
+                          : "text-gray-400 group-hover:text-emerald-600"
+                      }
                     />
 
-                    <span>
+                    <span className="truncate">
                       {menu.name}
                     </span>
-
                   </Link>
-
                 </li>
               );
             })}
-
           </ul>
-
         </nav>
 
-        {/* Logout */}
-
-        <div className="p-4 border-t">
-
+        {/* FOOTER / LOGOUT */}
+        <div className="px-3 py-4 border-t border-gray-100">
           <button
-            onClick={
-              handleLogout
-            }
-            className="
-            w-full
-            flex
-            items-center
-            justify-center
-            gap-2
-            py-3
-            rounded-2xl
-            bg-red-50
-            text-red-600
-            hover:bg-red-100
-            transition
-          "
+            type="button"
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 min-h-10 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-red-600 hover:bg-red-50 transition"
           >
             <LogOut size={18} />
-            Logout
+
+            <span>Logout</span>
           </button>
 
+          <p className="px-3.5 mt-3 text-[10px] text-gray-400">
+            Simbolon Inventory System
+          </p>
         </div>
-
       </aside>
-
     </>
   );
 }

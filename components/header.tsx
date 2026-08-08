@@ -2,181 +2,97 @@
 
 import {
   Bell,
-  Search,
   CalendarDays,
   ChevronDown,
+  Search,
 } from "lucide-react";
-
-import {
-  useEffect,
-  useState,
-} from "react";
+import { useEffect, useState } from "react";
 
 export default function Header() {
-  const [nama, setNama] =
-    useState("User");
-
-  const [role, setRole] =
-    useState("");
+  const [nama, setNama] = useState("Owner");
+  const [role, setRole] = useState("");
 
   useEffect(() => {
-    setNama(
-      localStorage.getItem(
-        "userName"
-      ) || "Owner"
-    );
+    const storedName = localStorage.getItem("userName");
+    const storedRole = localStorage.getItem("role");
 
-    setRole(
-      localStorage.getItem(
-        "role"
-      ) || ""
-    );
+    setNama(storedName?.trim() || "Owner");
+    setRole(storedRole?.trim() || "Admin");
   }, []);
 
-  const today =
-    new Date().toLocaleDateString(
-      "id-ID",
-      {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      }
-    );
+  const today = new Date().toLocaleDateString(
+    "id-ID",
+    {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }
+  );
+
+  const initial =
+    nama.trim().charAt(0).toUpperCase() || "O";
 
   return (
-    <header className="bg-white rounded-3xl shadow-sm border border-gray-100 px-6 py-5">
+    <header className="bg-white border-b border-gray-200">
+      <div className="px-4 sm:px-6 lg:px-8 py-4">
+        <div className="flex items-center justify-between gap-4">
+          {/* BRAND / DATE */}
+          <div className="min-w-0">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
+                <CalendarDays
+                  size={19}
+                  className="text-emerald-600"
+                />
+              </div>
 
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+              <div className="min-w-0">
+                <h1 className="text-lg sm:text-xl font-bold tracking-tight text-gray-900 truncate">
+                  SIMBOLON Inventory
+                </h1>
 
-        {/* Left */}
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="text-xs text-gray-400">
+                    {today}
+                  </span>
 
-        <div>
+                  <span className="w-1 h-1 rounded-full bg-gray-300" />
 
-          <h1 className="text-3xl font-bold text-gray-800">
-            Poultry Dashboard
-          </h1>
-
-          <div className="flex items-center gap-2 mt-2 text-gray-500">
-
-            <CalendarDays size={16} />
-
-            <span className="text-sm">
-              {today}
-            </span>
-
-          </div>
-
-        </div>
-
-        {/* Right */}
-
-        <div className="flex flex-wrap items-center gap-4">
-
-          <div className="relative">
-
-            <Search
-              size={18}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-            />
-
-            <input
-              type="text"
-              placeholder="Cari data..."
-              className="
-              w-64
-              bg-gray-50
-              border
-              border-gray-200
-              rounded-2xl
-              py-3
-              pl-11
-              pr-4
-              outline-none
-              focus:border-green-500
-              focus:ring-2
-              focus:ring-green-100
-            "
-            />
-
-          </div>
-
-          <button
-            className="
-            relative
-            w-12
-            h-12
-            rounded-2xl
-            border
-            border-gray-200
-            flex
-            items-center
-            justify-center
-            hover:bg-gray-50
-          "
-          >
-            <Bell size={20} />
-
-            <span
-              className="
-              absolute
-              top-2
-              right-2
-              w-2.5
-              h-2.5
-              rounded-full
-              bg-red-500
-            "
-            />
-          </button>
-
-          <button
-            className="
-            flex
-            items-center
-            gap-3
-            bg-gray-50
-            hover:bg-gray-100
-            px-3
-            py-2
-            rounded-2xl
-          "
-          >
-
-            <img
-              src="https://i.pravatar.cc/150"
-              alt="Profile"
-              className="
-              w-11
-              h-11
-              rounded-full
-              object-cover
-            "
-            />
-
-            <div className="text-left hidden sm:block">
-
-              <h4 className="font-semibold text-gray-800 capitalize">
-                {nama}
-              </h4>
-
-              <p className="text-xs text-gray-500 capitalize">
-                {role}
-              </p>
-
+                  <span className="text-xs font-medium text-emerald-600">
+                    Inventory System
+                  </span>
+                </div>
+              </div>
             </div>
+          </div>
 
-            <ChevronDown
-              size={16}
-              className="text-gray-400"
-            />
+          {/* ACTIONS */}
+          <div className="flex items-center gap-2 sm:gap-3">
+           
+            {/* PROFILE */}
+            <button
+              type="button"
+              aria-label="Menu profil"
+              className="flex items-center gap-2.5 h-10 pl-1.5 pr-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition"
+            >
+              <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
+                {initial}
+              </div>
 
-          </button>
+              <div className="hidden sm:block text-left min-w-0 max-w-[130px]">
+                <p className="text-xs font-bold text-gray-800 truncate capitalize">
+                  {nama}
+                </p>
 
+                <p className="text-[10px] text-gray-400 truncate capitalize mt-0.5">
+                  {role}
+                </p>
+              </div>
+            </button>
+          </div>
         </div>
-
       </div>
-
     </header>
   );
 }
