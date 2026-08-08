@@ -37,11 +37,12 @@ export default function Sidebar() {
   }, []);
 
   const menus = useMemo<MenuItem[]>(() => {
-    const baseMenus: MenuItem[] = [
+    const items: MenuItem[] = [
       {
         name: "Dashboard",
         icon: LayoutDashboard,
-        href: "/",
+        // PENTING: login mengarahkan ke /dashboard.
+        href: "/dashboard",
       },
       {
         name: "Ayam Masuk",
@@ -61,26 +62,23 @@ export default function Sidebar() {
       {
         name: "Master Ayam",
         icon: Tags,
+        // Pertahankan route asli aplikasi.
         href: "/master",
       },
     ];
 
     if (role.toLowerCase() === "owner") {
-      baseMenus.push({
+      items.push({
         name: "Management User",
         icon: Users,
         href: "/users",
       });
     }
 
-    return baseMenus;
+    return items;
   }, [role]);
 
   const isActive = (href: string) => {
-    if (href === "/") {
-      return pathname === "/";
-    }
-
     return (
       pathname === href ||
       pathname.startsWith(`${href}/`)
@@ -95,7 +93,7 @@ export default function Sidebar() {
     try {
       await signOut(auth);
     } catch (error) {
-      console.error("Gagal logout Firebase:", error);
+      console.error("Gagal logout:", error);
     } finally {
       localStorage.clear();
       router.push("/");
@@ -104,15 +102,15 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* MOBILE MENU BUTTON */}
+      {/* MOBILE BUTTON */}
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-label={
-          open ? "Tutup navigasi" : "Buka navigasi"
+          open ? "Tutup menu" : "Buka menu"
         }
         aria-expanded={open}
-        className="lg:hidden fixed top-4 left-4 z-[60] w-10 h-10 rounded-xl bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"
+        className="lg:hidden fixed top-4 left-4 z-[60] w-10 h-10 rounded-xl bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:bg-gray-50 transition"
       >
         {open ? <X size={19} /> : <Menu size={19} />}
       </button>
@@ -121,9 +119,9 @@ export default function Sidebar() {
       {open && (
         <button
           type="button"
-          aria-label="Tutup navigasi"
+          aria-label="Tutup menu"
           onClick={() => setOpen(false)}
-          className="lg:hidden fixed inset-0 z-40 bg-gray-950/35 backdrop-blur-[1px]"
+          className="lg:hidden fixed inset-0 z-40 bg-gray-950/35"
         />
       )}
 
@@ -146,12 +144,15 @@ export default function Sidebar() {
         <div className="px-5 py-5 border-b border-gray-100">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center shadow-sm shadow-emerald-600/20">
-              <Bird size={20} className="text-white" />
+              <Bird
+                size={20}
+                className="text-white"
+              />
             </div>
 
             <div className="min-w-0">
               <h1 className="text-base font-bold tracking-tight text-gray-900 truncate">
-                Simbolon Inventory
+                Poultry Inventory
               </h1>
 
               <p className="text-[11px] text-gray-400 mt-0.5">
@@ -161,7 +162,7 @@ export default function Sidebar() {
           </div>
         </div>
 
-        {/* USER / ROLE */}
+        {/* ROLE */}
         <div className="px-4 py-4">
           <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 px-3.5 py-3">
             <div className="flex items-center gap-3">
@@ -182,7 +183,7 @@ export default function Sidebar() {
           </div>
         </div>
 
-        {/* NAVIGATION */}
+        {/* MENU */}
         <nav className="flex-1 overflow-y-auto px-3 pb-4">
           <p className="px-3 mb-2 text-[10px] uppercase tracking-widest font-bold text-gray-400">
             Menu Utama
@@ -234,7 +235,7 @@ export default function Sidebar() {
           </ul>
         </nav>
 
-        {/* FOOTER / LOGOUT */}
+        {/* LOGOUT */}
         <div className="px-3 py-4 border-t border-gray-100">
           <button
             type="button"
@@ -242,12 +243,11 @@ export default function Sidebar() {
             className="w-full flex items-center gap-3 min-h-10 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-red-600 hover:bg-red-50 transition"
           >
             <LogOut size={18} />
-
             <span>Logout</span>
           </button>
 
           <p className="px-3.5 mt-3 text-[10px] text-gray-400">
-            Simbolon Inventory System
+            Poultry Inventory System
           </p>
         </div>
       </aside>
