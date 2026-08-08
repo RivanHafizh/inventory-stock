@@ -61,7 +61,7 @@ export default function Sidebar() {
       {
         name: "Master Ayam",
         icon: Tags,
-        href: "/masterayam",
+        href: "/master",
       },
     ];
 
