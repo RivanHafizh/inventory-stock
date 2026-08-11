@@ -54,10 +54,15 @@ export default function Sidebar() {
         icon: ArrowUpCircle,
         href: "/ayam-keluar",
       },
-      {
+       {
         name: "Laporan",
         icon: FileText,
         href: "/laporan",
+      },
+      {
+        name: "Prediksi",
+        icon: FileText,
+        href: "/prediksi",
       },
       {
         name: "Master Ayam",
